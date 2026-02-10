@@ -46,7 +46,7 @@
 #
 random=$(echo $RANDOM | tr '[0-9]' '[a-z]')
 export MY_LOCATION=uksouth
-export MY_RESOURCE_GROUP_NAME=apache-airflow-rg
+export MY_RESOURCE_GROUP_NAME=airflow-aks-rg
 export MY_IDENTITY_NAME=airflow-identity-123
 export MY_ACR_REGISTRY=mydnsrandomname$(echo $random)
 export MY_KEYVAULT_NAME=airflow-vault-$(echo $random)-kv
@@ -98,12 +98,21 @@ az role assignment create --assignee ${KUBELET_IDENTITY} --role "AcrPull" --scop
 az aks get-credentials --resource-group $MY_RESOURCE_GROUP_NAME --name $MY_CLUSTER_NAME --overwrite-existing --output table
 #
 # Upload Apache Airflow images to your container registry
-az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-2024.01.19-1.21.0 --image airflow:airflow-pgbouncer-2024.01.19-1.21.0
-az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-exporter-2024.06.18-0.17.0 --image airflow:airflow-pgbouncer-exporter-2024.06.18-0.17.0
-az acr import --name $MY_ACR_REGISTRY --source docker.io/bitnami/postgresql:16.1.0-debian-11-r15 --image postgresql:16.1.0-debian-11-r15
-az acr import --name $MY_ACR_REGISTRY --source quay.io/prometheus/statsd-exporter:v0.26.1 --image statsd-exporter:v0.26.1 
-az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:2.9.3 --image airflow:2.9.3 
-az acr import --name $MY_ACR_REGISTRY --source registry.k8s.io/git-sync/git-sync:v4.1.0 --image git-sync:v4.1.0
+#az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-2024.01.19-1.21.0 --image airflow:airflow-pgbouncer-2024.01.19-1.21.0
+#az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-exporter-2024.06.18-0.17.0 --image airflow:airflow-pgbouncer-exporter-2024.06.18-0.17.0
+#az acr import --name $MY_ACR_REGISTRY --source docker.io/bitnami/postgresql:16.1.0-debian-11-r15 --image postgresql:16.1.0-debian-11-r15
+#az acr import --name $MY_ACR_REGISTRY --source quay.io/prometheus/statsd-exporter:v0.26.1 --image statsd-exporter:v0.26.1 
+#az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:2.9.3 --image airflow:2.9.3 
+#az acr import --name $MY_ACR_REGISTRY --source registry.k8s.io/git-sync/git-sync:v4.1.0 --image git-sync:v4.1.0
+
+# Adding new images that are actually available
+az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-2025.03.05-1.23.1 --image airflow:airflow-pgbouncer-2025.03.05-1.23.1
+az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-exporter-2025.03.05-0.18.0 --image airflow:airflow-pgbouncer-exporter-2025.03.05-0.18.0
+az acr import --name $MY_ACR_REGISTRY --source docker.io/bitnamilegacy/postgresql:16.1.0-debian-11-r15 --image postgresql:16.1.0-debian-11-r15
+az acr import --name $MY_ACR_REGISTRY --source quay.io/prometheus/statsd-exporter:v0.28.0 --image statsd-exporter:v0.28.0 
+az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:3.0.2 --image airflow:3.0.2 
+az acr import --name $MY_ACR_REGISTRY --source registry.k8s.io/git-sync/git-sync:v4.3.0 --image git-sync:v4.3.0
+
 #
 # Ref: https://learn.microsoft.com/en-us/azure/aks/airflow-deploy
 # Configure workload identity
@@ -235,11 +244,12 @@ EOF
 #
 # Deploy Apache Airflow using Helm
 # Configure an airflow_values.yaml file to change the default deployment configurations for the chart and update the container registry for the images.
-cat <<EOF > airflow_values.yaml
+
+cat <<EOF> airflow_values.yaml
 images:
   airflow:
     repository: $MY_ACR_REGISTRY.azurecr.io/airflow
-    tag: 2.9.3
+    tag: 3.0.2
     # Specifying digest takes precedence over tag.
     digest: ~
     pullPolicy: IfNotPresent
@@ -256,51 +266,49 @@ images:
     # `config.kubernetes.worker_container_repository` and `config.kubernetes.worker_container_tag`
     # must be not set .
     repository: $MY_ACR_REGISTRY.azurecr.io/airflow
-    tag: 2.9.3
+    tag: 3.0.2
     pullPolicy: IfNotPresent
   flower:
     repository: $MY_ACR_REGISTRY.azurecr.io/airflow
-    tag: 2.9.3
+    tag: 3.0.2
     pullPolicy: IfNotPresent
   statsd:
     repository: $MY_ACR_REGISTRY.azurecr.io/statsd-exporter
-    tag: v0.26.1
+    tag: v0.28.0
     pullPolicy: IfNotPresent
   pgbouncer:
     repository: $MY_ACR_REGISTRY.azurecr.io/airflow
-    tag: airflow-pgbouncer-2024.01.19-1.21.0
+    tag: airflow-pgbouncer-2025.03.05-1.23.1
     pullPolicy: IfNotPresent
   pgbouncerExporter:
     repository: $MY_ACR_REGISTRY.azurecr.io/airflow
-    tag: airflow-pgbouncer-exporter-2024.06.18-0.17.0
+    tag: airflow-pgbouncer-exporter-2025.03.05-0.18.0
     pullPolicy: IfNotPresent
   gitSync:
     repository: $MY_ACR_REGISTRY.azurecr.io/git-sync
-    tag: v4.1.0
+    tag: v4.3.0
     pullPolicy: IfNotPresent
-    
 # Airflow executor
 executor: "KubernetesExecutor"
-
 # Environment variables for all airflow containers
 env:
   - name: ENVIRONMENT
     value: dev
-
 extraEnv: |
   - name: AIRFLOW__CORE__DEFAULT_TIMEZONE
     value: 'America/New_York'
-
 # Configuration for postgresql subchart
 # Not recommended for production! Instead, spin up your own Postgresql server and use the `data` attribute in this
 # yaml file.
 postgresql:
   enabled: true
-
+  image:
+    registry: $MY_ACR_REGISTRY.azurecr.io
+    repository: postgresql
+    tag: 16.1.0-debian-11-r15
 # Enable pgbouncer. See https://airflow.apache.org/docs/helm-chart/stable/production-guide.html#pgbouncer
 pgbouncer:
   enabled: true
-
 dags:
   gitSync:
     enabled: true
@@ -313,27 +321,23 @@ dags:
     # sshKeySecret: airflow-git-ssh-secret
     # knownHosts: |
     #   github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
-
 logs:
   persistence:
     enabled: true
     existingClaim: pvc-airflow-logs
     storageClassName: azureblob-fuse-premium
-
 # We disable the log groomer sidecar because we use Azure Blob Storage for logs, with lifecyle policy set.
 triggerer:
   logGroomerSidecar:
     enabled: false
-
 scheduler:
   logGroomerSidecar:
     enabled: false
-
 workers:
   logGroomerSidecar:
     enabled: false
+EOF>
 
-EOF
 # Add the Apache Airflow Helm repository and update the repository using the helm repo add and helm repo update commands.
 helm repo add apache-airflow https://airflow.apache.org
 helm repo update
