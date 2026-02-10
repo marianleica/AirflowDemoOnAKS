@@ -45,7 +45,7 @@
 # Set environment variables
 #
 random=$(echo $RANDOM | tr '[0-9]' '[a-z]')
-export MY_LOCATION=canadacentral
+export MY_LOCATION=uksouth
 export MY_RESOURCE_GROUP_NAME=apache-airflow-rg
 export MY_IDENTITY_NAME=airflow-identity-123
 export MY_ACR_REGISTRY=mydnsrandomname$(echo $random)
