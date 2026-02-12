@@ -106,11 +106,19 @@ az aks get-credentials --resource-group $MY_RESOURCE_GROUP_NAME --name $MY_CLUST
 #az acr import --name $MY_ACR_REGISTRY --source registry.k8s.io/git-sync/git-sync:v4.1.0 --image git-sync:v4.1.0
 
 # Adding new images that are actually available
+#az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-2025.03.05-1.23.1 --image airflow:airflow-pgbouncer-2025.03.05-1.23.1
+#az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-exporter-2025.03.05-0.18.0 --image airflow:airflow-pgbouncer-exporter-2025.03.05-0.18.0
+#az acr import --name $MY_ACR_REGISTRY --source docker.io/bitnamilegacy/postgresql:16.1.0-debian-11-r15 --image postgresql:16.1.0-debian-11-r15
+#az acr import --name $MY_ACR_REGISTRY --source quay.io/prometheus/statsd-exporter:v0.28.0 --image statsd-exporter:v0.28.0 
+#az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:3.0.2 --image airflow:3.0.2 
+#az acr import --name $MY_ACR_REGISTRY --source registry.k8s.io/git-sync/git-sync:v4.3.0 --image git-sync:v4.3.0
+
+# Adding images with latest airflow image due to internal image issue on 3.0.2
 az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-2025.03.05-1.23.1 --image airflow:airflow-pgbouncer-2025.03.05-1.23.1
 az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-exporter-2025.03.05-0.18.0 --image airflow:airflow-pgbouncer-exporter-2025.03.05-0.18.0
 az acr import --name $MY_ACR_REGISTRY --source docker.io/bitnamilegacy/postgresql:16.1.0-debian-11-r15 --image postgresql:16.1.0-debian-11-r15
 az acr import --name $MY_ACR_REGISTRY --source quay.io/prometheus/statsd-exporter:v0.28.0 --image statsd-exporter:v0.28.0 
-az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:3.0.2 --image airflow:3.0.2 
+az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:latest --image airflow:latest 
 az acr import --name $MY_ACR_REGISTRY --source registry.k8s.io/git-sync/git-sync:v4.3.0 --image git-sync:v4.3.0
 
 #
@@ -245,11 +253,11 @@ EOF
 # Deploy Apache Airflow using Helm
 # Configure an airflow_values.yaml file to change the default deployment configurations for the chart and update the container registry for the images.
 
-cat <<EOF> airflow_values.yaml
+cat <<EOF > airflow_values.yaml
 images:
   airflow:
     repository: $MY_ACR_REGISTRY.azurecr.io/airflow
-    tag: 3.0.2
+    tag: latest
     # Specifying digest takes precedence over tag.
     digest: ~
     pullPolicy: IfNotPresent
@@ -261,16 +269,16 @@ images:
   # timeout (in seconds) for airflow-migrations to complete
   migrationsWaitTimeout: 60
   pod_template:
-    # Note that `images.pod_template.repository` and `images.pod_template.tag` parameters
-    # can be overridden in `config.kubernetes` section. So for these parameters to have effect
-    # `config.kubernetes.worker_container_repository` and `config.kubernetes.worker_container_tag`
+    # Note that 'images.pod_template.repository' and 'images.pod_template.tag' parameters
+    # can be overridden in 'config.kubernetes' section. So for these parameters to have effect
+    # 'config.kubernetes.worker_container_repository' and 'config.kubernetes.worker_container_tag'
     # must be not set .
     repository: $MY_ACR_REGISTRY.azurecr.io/airflow
-    tag: 3.0.2
+    tag: latest
     pullPolicy: IfNotPresent
   flower:
     repository: $MY_ACR_REGISTRY.azurecr.io/airflow
-    tag: 3.0.2
+    tag: latest
     pullPolicy: IfNotPresent
   statsd:
     repository: $MY_ACR_REGISTRY.azurecr.io/statsd-exporter
@@ -298,7 +306,7 @@ extraEnv: |
   - name: AIRFLOW__CORE__DEFAULT_TIMEZONE
     value: 'America/New_York'
 # Configuration for postgresql subchart
-# Not recommended for production! Instead, spin up your own Postgresql server and use the `data` attribute in this
+# Not recommended for production! Instead, spin up your own Postgresql server and use the 'data' attribute in this
 # yaml file.
 postgresql:
   enabled: true
@@ -336,7 +344,7 @@ scheduler:
 workers:
   logGroomerSidecar:
     enabled: false
-EOF>
+EOF
 
 # Add the Apache Airflow Helm repository and update the repository using the helm repo add and helm repo update commands.
 helm repo add apache-airflow https://airflow.apache.org
@@ -353,7 +361,7 @@ kubectl get pods -n airflow
 #
 # Access Airflow UI
 # Securely access the Airflow UI through port-forwarding using the kubectl port-forward command.
-kubectl port-forward svc/airflow-webserver 8080:8080 -n airflow
+kubectl port-forward svc/airflow-api-server 8080:8080 --namespace airflow
 # Open your browser and navigate to localhost:8080 to access the Airflow UI.
 # Use the default webserver URL and login credentials provided during the Airflow Helm chart installation to log in.
 # Explore and manage your workflows securely through the Airflow UI.

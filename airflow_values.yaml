@@ -1,8 +1,6 @@
 images:
   airflow:
-    #repository: mydnsrandomnameeai.azurecr.io/airflow
-    #tag: 3.0.2
-    repository: docker.io/apache/airflow
+    repository: mydnsrandomnamebihei.azurecr.io/airflow
     tag: latest
     # Specifying digest takes precedence over tag.
     digest: ~
@@ -15,35 +13,31 @@ images:
   # timeout (in seconds) for airflow-migrations to complete
   migrationsWaitTimeout: 60
   pod_template:
-    # Note that `images.pod_template.repository` and `images.pod_template.tag` parameters
-    # can be overridden in `config.kubernetes` section. So for these parameters to have effect
-    # `config.kubernetes.worker_container_repository` and `config.kubernetes.worker_container_tag`
+    # Note that 'images.pod_template.repository' and 'images.pod_template.tag' parameters
+    # can be overridden in 'config.kubernetes' section. So for these parameters to have effect
+    # 'config.kubernetes.worker_container_repository' and 'config.kubernetes.worker_container_tag'
     # must be not set .
-    #repository: mydnsrandomnameeai.azurecr.io/airflow
-    #tag: 3.0.2
-    repository: docker.io/apache/airflow
+    repository: mydnsrandomnamebihei.azurecr.io/airflow
     tag: latest
     pullPolicy: IfNotPresent
   flower:
-    #repository: mydnsrandomnameeai.azurecr.io/airflow
-    #tag: 3.0.2
-    repository: docker.io/apache/airflow
+    repository: mydnsrandomnamebihei.azurecr.io/airflow
     tag: latest
     pullPolicy: IfNotPresent
   statsd:
-    repository: mydnsrandomnameeai.azurecr.io/statsd-exporter
+    repository: mydnsrandomnamebihei.azurecr.io/statsd-exporter
     tag: v0.28.0
     pullPolicy: IfNotPresent
   pgbouncer:
-    repository: mydnsrandomnameeai.azurecr.io/airflow
+    repository: mydnsrandomnamebihei.azurecr.io/airflow
     tag: airflow-pgbouncer-2025.03.05-1.23.1
     pullPolicy: IfNotPresent
   pgbouncerExporter:
-    repository: mydnsrandomnameeai.azurecr.io/airflow
+    repository: mydnsrandomnamebihei.azurecr.io/airflow
     tag: airflow-pgbouncer-exporter-2025.03.05-0.18.0
     pullPolicy: IfNotPresent
   gitSync:
-    repository: mydnsrandomnameeai.azurecr.io/git-sync
+    repository: mydnsrandomnamebihei.azurecr.io/git-sync
     tag: v4.3.0
     pullPolicy: IfNotPresent
 # Airflow executor
@@ -56,12 +50,12 @@ extraEnv: |
   - name: AIRFLOW__CORE__DEFAULT_TIMEZONE
     value: 'America/New_York'
 # Configuration for postgresql subchart
-# Not recommended for production! Instead, spin up your own Postgresql server and use the `data` attribute in this
+# Not recommended for production! Instead, spin up your own Postgresql server and use the 'data' attribute in this
 # yaml file.
 postgresql:
   enabled: true
   image:
-    registry: mydnsrandomnameeai.azurecr.io
+    registry: mydnsrandomnamebihei.azurecr.io
     repository: postgresql
     tag: 16.1.0-debian-11-r15
 # Enable pgbouncer. See https://airflow.apache.org/docs/helm-chart/stable/production-guide.html#pgbouncer
