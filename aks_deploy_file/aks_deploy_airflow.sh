@@ -201,39 +201,7 @@ az identity federated-credential create --name external-secret-operator --identi
 # Give permission to the user-assigned identity to access the secret using the az keyvault set-policy command.
 az keyvault set-policy --name $MY_KEYVAULT_NAME --object-id $MY_IDENTITY_NAME_PRINCIPAL_ID --secret-permissions get --output table
 #
-# Create a persistent volume for Apache Airflow logs
-# Create a persistent volume using the kubectl apply command.
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pv-airflow-logs
-  labels:
-    type: local
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain # If set as "Delete" container would be removed after pvc deletion
-  storageClassName: azureblob-fuse-premium
-  mountOptions:
-    - -o allow_other
-    - --file-cache-timeout-in-seconds=120
-  csi:
-    driver: blob.csi.azure.com
-    readOnly: false
-    volumeHandle: airflow-logs-1
-    volumeAttributes:
-      resourceGroup: ${MY_RESOURCE_GROUP_NAME}
-      storageAccount: ${AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_NAME}
-      containerName: ${AKS_AIRFLOW_LOGS_STORAGE_CONTAINER_NAME}
-    nodeStageSecretRef:
-      name: ${AKS_AIRFLOW_LOGS_STORAGE_SECRET_NAME}
-      namespace: ${AKS_AIRFLOW_NAMESPACE}
-EOF
-#
-# Create a persistent volume claim for Apache Airflow logs
+# Create a persistent volume claim for Apache Airflow logs using built-in Azure Files CSI
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -241,13 +209,12 @@ metadata:
   name: pvc-airflow-logs
   namespace: ${AKS_AIRFLOW_NAMESPACE}
 spec:
-  storageClassName: azureblob-fuse-premium
   accessModes:
     - ReadWriteMany
+  storageClassName: azurefile-csi
   resources:
     requests:
       storage: 5Gi
-  volumeName: pv-airflow-logs
 EOF
 ##################################
 
@@ -258,6 +225,10 @@ EOF
 #
 # Deploy Apache Airflow using Helm
 # Configure an airflow_values.yaml file to change the default deployment configurations for the chart and update the container registry for the images.
+
+echo $MY_ACR_REGISTRY
+cd "/Users/marianleica/Build/azure/projects/AirflowDemoOnAKS"
+MY_ACR_REGISTRY="mydnsrandomnamecdgef"
 
 cat <<EOF > airflow_values.yaml
 images:
@@ -339,12 +310,16 @@ logs:
   persistence:
     enabled: true
     existingClaim: pvc-airflow-logs
-    storageClassName: azureblob-fuse-premium
-# We disable the log groomer sidecar because we use Azure Blob Storage for logs, with lifecyle policy set.
+    storageClassName: azurefile-csi
+# We disable the log groomer sidecar because we use Azure Files for logs.
+webserver:
+  replicas: 2
 triggerer:
+  replicas: 2
   logGroomerSidecar:
     enabled: false
 scheduler:
+  replicas: 2
   logGroomerSidecar:
     enabled: false
 workers:
