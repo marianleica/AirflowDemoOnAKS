@@ -57,6 +57,7 @@ export AKS_AIRFLOW_NAMESPACE=airflow
 export AKS_AIRFLOW_CLUSTER_NAME=cluster-aks-airflow
 export AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_NAME=airflowsasa$(echo $random)
 export AKS_AIRFLOW_LOGS_STORAGE_CONTAINER_NAME=airflow-logs
+export AKS_AIRFLOW_BLOB_STORAGE_CONTAINER_NAME=airflow-artifacts
 export AKS_AIRFLOW_LOGS_STORAGE_SECRET_NAME=storage-account-credentials
 #
 # Create resource group
@@ -82,6 +83,7 @@ export MY_ACR_REGISTRY_ID=$(az acr show --name $MY_ACR_REGISTRY --resource-group
 az storage account create --name $AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_NAME --resource-group $MY_RESOURCE_GROUP_NAME --location $MY_LOCATION --sku Standard_ZRS --output table
 export AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_KEY=$(az storage account keys list --account-name $AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv)
 az storage container create --name $AKS_AIRFLOW_LOGS_STORAGE_CONTAINER_NAME --account-name $AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_NAME --output table --account-key $AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_KEY
+az storage container create --name $AKS_AIRFLOW_BLOB_STORAGE_CONTAINER_NAME --account-name $AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_NAME --output table --account-key $AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_KEY
 az keyvault secret set --vault-name $MY_KEYVAULT_NAME --name AKS-AIRFLOW-LOGS-STORAGE-ACCOUNT-NAME --value $AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_NAME
 az keyvault secret set --vault-name $MY_KEYVAULT_NAME --name AKS-AIRFLOW-LOGS-STORAGE-ACCOUNT-KEY --value $AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_KEY
 #
@@ -217,6 +219,52 @@ spec:
       storage: 5Gi
 EOF
 
+# Create a persistent volume for Airflow blob artifacts using Azure Blob CSI
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-airflow-blob
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: azureblob-fuse-premium
+  mountOptions:
+    - -o allow_other
+    - --file-cache-timeout-in-seconds=120
+  csi:
+    driver: blob.csi.azure.com
+    readOnly: false
+    volumeHandle: airflow-blob-data-1
+    volumeAttributes:
+      resourceGroup: ${MY_RESOURCE_GROUP_NAME}
+      storageAccount: ${AKS_AIRFLOW_LOGS_STORAGE_ACCOUNT_NAME}
+      containerName: ${AKS_AIRFLOW_BLOB_STORAGE_CONTAINER_NAME}
+    nodeStageSecretRef:
+      name: ${AKS_AIRFLOW_LOGS_STORAGE_SECRET_NAME}
+      namespace: ${AKS_AIRFLOW_NAMESPACE}
+EOF
+
+# Create a persistent volume claim for Airflow blob artifacts
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-airflow-blob
+  namespace: ${AKS_AIRFLOW_NAMESPACE}
+spec:
+  storageClassName: azureblob-fuse-premium
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: pv-airflow-blob
+EOF
+
 ##################################
 # Deploy Apache Airflow using Helm
 # Configure an airflow_values.yaml file to change the default deployment configurations for the chart and update the container registry for the images.
@@ -306,6 +354,13 @@ logs:
     enabled: true
     existingClaim: pvc-airflow-logs
     storageClassName: azurefile-csi
+extraVolumes:
+  - name: airflow-blob-data
+    persistentVolumeClaim:
+      claimName: pvc-airflow-blob
+extraVolumeMounts:
+  - name: airflow-blob-data
+    mountPath: /opt/airflow/blob-data
 # We disable the log groomer sidecar because we use Azure Files for logs.
 webserver:
   replicas: 2
