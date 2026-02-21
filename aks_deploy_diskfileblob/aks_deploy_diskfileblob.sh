@@ -340,7 +340,7 @@ pgbouncer:
 dags:
   gitSync:
     enabled: true
-    repo: https://github.com/donhighmsft/airflowexamples.git
+    repo: https://github.com/marianleica/AirflowDemoOnAKS.git
     branch: main
     rev: HEAD
     depth: 1
