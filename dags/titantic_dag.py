@@ -10,8 +10,9 @@ default_args = {
 }
 
 @dag(
+        dag_id="titanic_pipeline",
         default_args=default_args, 
-        schedule_interval="@once", 
+        schedule="@once", 
         description="Simple Pipeline with Titanic", 
         catchup=False, 
         tags=['Titanic']

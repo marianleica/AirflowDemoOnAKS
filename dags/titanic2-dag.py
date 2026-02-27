@@ -10,12 +10,12 @@ default_args = {
 }
 
 @dag(
-    dag_id="titanic2_pipeline",
-    default_args=default_args,
-    schedule="@once",
-    description="Simple Pipeline with Titanic (v2)",
-    catchup=False,
-    tags=['Titanic']
+        dag_id="titanic2_pipeline",
+        default_args=default_args,
+        schedule="@once",
+        description="Simple Pipeline with Titanic (v2)",
+        catchup=False,
+        tags=['Titanic']
 )
 def titanic2_processing():
 
