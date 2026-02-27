@@ -10,13 +10,14 @@ default_args = {
 }
 
 @dag(
+    dag_id="titanic2_pipeline",
     default_args=default_args,
     schedule="@once",
-    description="Simple Pipeline with Titanic",
+    description="Simple Pipeline with Titanic (v2)",
     catchup=False,
     tags=['Titanic']
 )
-def titanic_processing():
+def titanic2_processing():
 
     start = EmptyOperator(task_id='start')
 
@@ -57,4 +58,4 @@ def titanic_processing():
 
     [surv_count, surv_sex] >> last >> end
 
-dag_instance = titanic_processing()
+dag_instance = titanic2_processing()
