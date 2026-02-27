@@ -96,6 +96,8 @@ az role assignment create --assignee $KUBELET_IDENTITY --role "AcrPull" --scope 
 #
 # Connect to the AKS cluster
 az aks get-credentials --resource-group $MY_RESOURCE_GROUP_NAME --name $MY_CLUSTER_NAME --overwrite-existing --output table
+# WSL alternative:  
+# export KUBECONFIG=/mnt/c/Users/maleica/.kube/config
 #
 # Upload Apache Airflow images to your container registry
 #az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-2024.01.19-1.21.0 --image airflow:airflow-pgbouncer-2024.01.19-1.21.0

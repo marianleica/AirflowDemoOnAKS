@@ -1,6 +1,6 @@
 images:
   airflow:
-    repository: mydnsrandomnamebjfjd.azurecr.io/airflow
+    repository: mydnsrandomnamebjdij.azurecr.io/airflow
     tag: latest
     # Specifying digest takes precedence over tag.
     digest: ~
@@ -17,27 +17,27 @@ images:
     # can be overridden in 'config.kubernetes' section. So for these parameters to have effect
     # 'config.kubernetes.worker_container_repository' and 'config.kubernetes.worker_container_tag'
     # must be not set .
-    repository: mydnsrandomnamebjfjd.azurecr.io/airflow
+    repository: mydnsrandomnamebjdij.azurecr.io/airflow
     tag: latest
     pullPolicy: IfNotPresent
   flower:
-    repository: mydnsrandomnamebjfjd.azurecr.io/airflow
+    repository: mydnsrandomnamebjdij.azurecr.io/airflow
     tag: latest
     pullPolicy: IfNotPresent
   statsd:
-    repository: mydnsrandomnamebjfjd.azurecr.io/statsd-exporter
+    repository: mydnsrandomnamebjdij.azurecr.io/statsd-exporter
     tag: v0.28.0
     pullPolicy: IfNotPresent
   pgbouncer:
-    repository: mydnsrandomnamebjfjd.azurecr.io/airflow
+    repository: mydnsrandomnamebjdij.azurecr.io/airflow
     tag: airflow-pgbouncer-2025.03.05-1.23.1
     pullPolicy: IfNotPresent
   pgbouncerExporter:
-    repository: mydnsrandomnamebjfjd.azurecr.io/airflow
+    repository: mydnsrandomnamebjdij.azurecr.io/airflow
     tag: airflow-pgbouncer-exporter-2025.03.05-0.18.0
     pullPolicy: IfNotPresent
   gitSync:
-    repository: mydnsrandomnamebjfjd.azurecr.io/git-sync
+    repository: mydnsrandomnamebjdij.azurecr.io/git-sync
     tag: v4.3.0
     pullPolicy: IfNotPresent
 # Airflow executor
@@ -55,7 +55,7 @@ extraEnv: |
 postgresql:
   enabled: true
   image:
-    registry: mydnsrandomnamebjfjd.azurecr.io
+    registry: mydnsrandomnamebjdij.azurecr.io
     repository: postgresql
     tag: 16.1.0-debian-11-r15
 # Enable pgbouncer. See https://airflow.apache.org/docs/helm-chart/stable/production-guide.html#pgbouncer
@@ -64,7 +64,7 @@ pgbouncer:
 dags:
   gitSync:
     enabled: true
-    repo: https://github.com/donhighmsft/airflowexamples.git
+    repo: https://github.com/marianleica/AirflowDemoOnAKS.git
     branch: main
     rev: HEAD
     depth: 1
@@ -78,13 +78,6 @@ logs:
     enabled: true
     existingClaim: pvc-airflow-logs
     storageClassName: azurefile-csi
-extraVolumes:
-  - name: airflow-blob-data
-    persistentVolumeClaim:
-      claimName: pvc-airflow-blob
-extraVolumeMounts:
-  - name: airflow-blob-data
-    mountPath: /opt/airflow/blob-data
 # We disable the log groomer sidecar because we use Azure Files for logs.
 webserver:
   replicas: 2
