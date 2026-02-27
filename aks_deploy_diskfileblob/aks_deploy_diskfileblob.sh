@@ -95,9 +95,13 @@ export OIDC_URL=$(az aks show --resource-group $MY_RESOURCE_GROUP_NAME --name $M
 # Assign the AcrPull role to the kubelet identity using the az role assignment create command
 export KUBELET_IDENTITY=$(az aks show -g $MY_RESOURCE_GROUP_NAME --name $MY_CLUSTER_NAME --output tsv --query identityProfile.kubeletidentity.objectId)
 az role assignment create --assignee $KUBELET_IDENTITY --role "AcrPull" --scope $MY_ACR_REGISTRY_ID --output table
+# Otherwise:
+# az aks update --name $MY_CLUSTER_NAME --resource-group $MY_RESOURCE_GROUP_NAME --attach-acr $MY_ACR_REGISTRY --output table
 #
 # Connect to the AKS cluster
 az aks get-credentials --resource-group $MY_RESOURCE_GROUP_NAME --name $MY_CLUSTER_NAME --overwrite-existing --output table
+# WSL alternative:  
+# export KUBECONFIG=/mnt/c/Users/maleica/.kube/config
 #
 # Upload Apache Airflow images to your container registry
 #az acr import --name $MY_ACR_REGISTRY --source docker.io/apache/airflow:airflow-pgbouncer-2024.01.19-1.21.0 --image airflow:airflow-pgbouncer-2024.01.19-1.21.0
@@ -202,6 +206,8 @@ az identity federated-credential create --name external-secret-operator --identi
 #
 # Give permission to the user-assigned identity to access the secret using the az keyvault set-policy command.
 az keyvault set-policy --name $MY_KEYVAULT_NAME --object-id $MY_IDENTITY_NAME_PRINCIPAL_ID --secret-permissions get --output table
+# echo $MY_KEYVAULT_NAME
+# echo $MY_IDENTITY_NAME_PRINCIPAL_ID 
 #
 # Create a persistent volume claim for Apache Airflow logs using built-in Azure Files CSI
 kubectl apply -f - <<EOF
@@ -269,9 +275,9 @@ EOF
 # Deploy Apache Airflow using Helm
 # Configure an airflow_values.yaml file to change the default deployment configurations for the chart and update the container registry for the images.
 
-echo $MY_ACR_REGISTRY
-cd "/Users/marianleica/Build/azure/projects/AirflowDemoOnAKS"
-MY_ACR_REGISTRY="mydnsrandomnamecdgef"
+# echo $MY_ACR_REGISTRY
+# cd "/Users/marianleica/Build/azure/projects/AirflowDemoOnAKS"
+# MY_ACR_REGISTRY="mydnsrandomnamebbecj"
 
 cat <<EOF > airflow_values.yaml
 images:
