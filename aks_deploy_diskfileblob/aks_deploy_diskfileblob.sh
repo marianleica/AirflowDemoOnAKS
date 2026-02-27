@@ -270,14 +270,13 @@ spec:
       storage: 5Gi
   volumeName: pv-airflow-blob
 EOF
+# echo $MY_ACR_REGISTRY
+# cd "/Users/marianleica/Build/azure/projects/AirflowDemoOnAKS"
+# MY_ACR_REGISTRY="mydnsrandomnamebbecj"
 
 ##################################
 # Deploy Apache Airflow using Helm
 # Configure an airflow_values.yaml file to change the default deployment configurations for the chart and update the container registry for the images.
-
-# echo $MY_ACR_REGISTRY
-# cd "/Users/marianleica/Build/azure/projects/AirflowDemoOnAKS"
-# MY_ACR_REGISTRY="mydnsrandomnamebbecj"
 
 cat <<EOF > airflow_values.yaml
 images:
