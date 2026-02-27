@@ -1,0 +1,23 @@
+Hello there! My name is Marian Leica and I'm a Microsoft Engineer supporting our customers and parners with Azure Container solutions here at Microsoft 
+.
+In this video, I'd like to show you an integration of the Apache Airflow product in Azure Kubernetes Services, AKS, and though the basic open-source Airflow deployment for Kubernetes can be easily run by using the public helm chart, what will be different in our setup is that we'll take advantage of the variety of integrations AKS can support innately just by being native to the Azure Cloud.
+.
+What you see right now is an overview article published in the official AKS documentation referring to Apache Airflow together with a tutorial sample configuration.
+.
+And this is well depicted in this diagram. This configuration specifically is the one explored in this guide, but this can be customized a lot as we see fit.
+.
+Here's the AKS cluster where the Airflow components are deployed, and it's having access to other Azure Services, most notably, Azure KeyVault for Airflow Secrets, Azure Disk for Dags Storage database and Blob storage for Dags logs.
+.
+In this example, users connect the Airflow Web Server for the Airflow UI experience. When users or a CI/CD pipeline updates the code repository of Dags, here it's GitHub, but it can be any other, the gitsync operator checks for updates and runs any new Dags it finds. As simple as that.
+.
+I've achieved the same deployment by following this tutorial, though what if there's a different need, like multiple pod replicas that need access to logs at the same time? That won't work using a blob or disk, since it can't be mounted in multiple pods simultaneously, right? so here comes Azure Files into the picture. Let's have a look.
+.
+I've added multiple replicas to the airflow components for once. But still large amounts of data would benefit a blob more, so I can still have it mentioned in here in my helm values overwrite file.
+.
+Let's see the resources now. And the storage options in use.
+Great, now let's connect to the Airflow UI and see the DAGs.
+.
+We have one error, not much of a surprise, it's left there intentional.
+Now, let's push a new similar DAG in which this package error is fixed.
+.
+All right! This has been an integration overview of Azure Storage options for running customized Airflow deployment in AKS on Azure. Take care!
